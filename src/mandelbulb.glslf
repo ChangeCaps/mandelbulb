@@ -2,6 +2,7 @@
 
 uniform uvec2 iResolution;
 uniform vec3 camPosition;
+uniform vec2 camRotation;
 
 out vec4 color;
 
@@ -21,8 +22,37 @@ vec2 isphere( in vec4 sph, in vec3 ro, in vec3 rd )
     return -b + vec2(-h,h);
 } 
 
+float mandelbulb(in vec3 p) {
+    vec3 np = vec3(p.x, p.z, p.y);
+    vec3 z = np;
+	float dr = 1.0;
+	float r = 0.0;
 
-float map(in vec3 p)
+    float Power = 8.0;
+
+	for (int i = 0; i < 10 ; i++) {
+		r = length(z);
+
+		if (r > 2) break;
+		
+		// convert to polar coordinates
+		float theta = acos(z.z/r);
+		float phi = atan(z.y,z.x);
+		dr =  pow( r, Power-1.0)*Power*dr + 1.0;
+		
+		// scale and rotate the point
+		float zr = pow( r,Power);
+		theta = theta*Power;
+		phi = phi*Power;
+		
+		// convert back to cartesian coordinates
+		z = zr*vec3(sin(theta)*cos(phi), sin(phi)*sin(theta), cos(theta));
+		z += np;
+	}
+	return 0.5*log(r)*r/dr;
+}
+
+float mandelbulb_fast(in vec3 p)
 {
     vec3 w = p;
     float m = dot(w,w);
@@ -62,8 +92,8 @@ vec4 lerp(vec4 a, vec4 b, float val) {
     return (1-val)*a + val*b;
 }
 
-float intersect(vec3 pos, vec3 ray, float detail, out int ops) {
-    ops = 128;
+float intersect(vec3 pos, vec3 ray, float detail, out float ops) {
+    ops = 1;
     
     vec2 dis = isphere(vec4(0.0, 0.0, 0.0, 1.25), pos, ray);
     
@@ -78,11 +108,11 @@ float intersect(vec3 pos, vec3 ray, float detail, out int ops) {
     float len = dis.x;
     float dist = dis.x; 
 
-    for (int i = 0; i < 128; i++) {
-        dist = map(pos + ray*len);
+    for (int i = 0; i < 512; i++) {
+        dist = mandelbulb(pos + ray*len);
 
         if (dist < 0.25*detail*len || len > dis.y) {
-            ops = i; 
+            ops = clamp(float(i) / 128.0, 0.0, 1); 
             break;
         }
 
@@ -101,11 +131,11 @@ void render(vec3 ray) {
     
     vec4 col = vec4(0.2, 0.7, 0.3, 1.0);
 
-    int ops;
+    float ops;
     float l = intersect(camPosition, ray, first_detail, ops);
 
     if (l >= 0) 
-        col = lerp(col, vec4(0.0, 0.0, 0.0, 1.0), 1.0/sqrt(sqrt(sqrt(float(ops)))));
+        col = lerp(col, vec4(0.0, 0.0, 0.0, 1.0), sqrt(ops));
     else {
         color = vec4(0.0, 0.0, 0.0, 1.0);
         return;
@@ -116,8 +146,8 @@ void render(vec3 ray) {
 }
 
 void main() {
-    float yaw = (gl_FragCoord.x/iResolution.x - 0.5)*iResolution.x/iResolution.y; 
-    float pitch = (gl_FragCoord.y/iResolution.y) - 0.5;
+    float yaw = (gl_FragCoord.x/iResolution.x - 0.5)*iResolution.x/iResolution.y + camRotation.x; 
+    float pitch = -gl_FragCoord.y/iResolution.y + camRotation.y + 0.5;
 
     vec3 ray = vec3(
         sin(yaw)*cos(pitch),

@@ -224,13 +224,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "glium-tutorial"
-version = "0.1.0"
-dependencies = [
- "glium 0.25.1 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "glutin"
 version = "0.21.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -350,6 +343,13 @@ version = "0.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "libc 0.2.62 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "mandelbulb"
+version = "0.1.0"
+dependencies = [
+ "glium 0.25.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
