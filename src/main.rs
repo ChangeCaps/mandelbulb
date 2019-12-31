@@ -11,15 +11,13 @@ struct Vertex {
 
 implement_vertex!(Vertex, position);
 
-fn distance_mandelbulb(x: f32, z: f32, y: f32) -> f32 {
+fn distance_mandelbulb(x: f32, z: f32, y: f32, power: f32) -> f32 {
     let mut zx = x;
     let mut zy = y;
     let mut zz = z;
     
     let mut dr = 1.0;
     let mut r = 0.0;
-
-    let power = 8.0;
 
     for _i in 0..10 {
         r = (zx * zx + zy * zy + zz * zz).sqrt();
@@ -58,6 +56,7 @@ fn main() {
     let mut position = [0.0f32, 0.0f32, -2.5f32];
     let mut yaw = 0.0f32;
     let mut pitch = 0.0f32;
+    let mut power: f32 = 0.0;
     let mut speed;
 
     let program = Program::from_source(
@@ -83,7 +82,7 @@ fn main() {
     while running {
         let t1 = time::Instant::now();
 
-        speed = (distance_mandelbulb(position[0], position[1], position[2]) * 0.02).min(0.01).max(0.0000000001);
+        speed = (distance_mandelbulb(position[0], position[1], position[2], power) * 0.02).min(0.01).max(0.0000000001);
 
         let mut frame = display.draw();
         
@@ -94,7 +93,8 @@ fn main() {
                    &program,
                    &uniform! {iResolution: [res.0, res.1],
                               camPosition: position,
-                              camRotation: [yaw, pitch]},
+                              camRotation: [yaw, pitch],
+                              Power: power},
                    &Default::default()).unwrap();
 
         frame.finish().unwrap();
@@ -137,6 +137,12 @@ fn main() {
                                 move_dir = 0;
                             }
                         },
+                        Some(VirtualKeyCode::R) => {
+                            power += 0.03;
+                        },
+                        Some(VirtualKeyCode::F) => {
+                            power -= 0.03;
+                        },
                         Some(VirtualKeyCode::Escape) => {
                             display.gl_window().window().grab_cursor(false).unwrap();
                             display.gl_window().window().hide_cursor(false);
@@ -169,9 +175,9 @@ fn main() {
 
         if let Some(d3) = d2 {
             thread::sleep(d3);
-            //println!("This frame took: {:?}", d3);
+            print!("\rThis frame took: {:?}                          ", d3);
         } else {
-            //println!("This frame took: {:?}", d1);
+            print!("\rThis frame took: {:?}                          ", d1);
         }
     }
 }

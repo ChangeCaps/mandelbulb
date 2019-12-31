@@ -3,6 +3,7 @@
 uniform uvec2 iResolution;
 uniform vec3 camPosition;
 uniform vec2 camRotation;
+uniform float Power;
 
 out vec4 color;
 
@@ -27,8 +28,6 @@ float mandelbulb(in vec3 p) {
     vec3 z = np;
 	float dr = 1.0;
 	float r = 0.0;
-
-    float Power = 8.0;
 
 	for (int i = 0; i < 10 ; i++) {
 		r = length(z);
@@ -112,7 +111,7 @@ float intersect(vec3 pos, vec3 ray, float detail, out float ops) {
         dist = mandelbulb(pos + ray*len);
 
         if (dist < 0.25*detail*len || len > dis.y) {
-            ops = clamp(float(i) / 128.0, 0.0, 1); 
+            ops = clamp(float(i) / 128.0, 0.0, 1.0); 
             break;
         }
 
@@ -146,14 +145,16 @@ void render(vec3 ray) {
 }
 
 void main() {
-    float yaw = (gl_FragCoord.x/iResolution.x - 0.5)*iResolution.x/iResolution.y + camRotation.x; 
-    float pitch = -gl_FragCoord.y/iResolution.y + camRotation.y + 0.5;
+    float beta = camRotation.x;
+    float gamma  = -camRotation.y;
+    float alpha = 0.0;
 
-    vec3 ray = vec3(
-        sin(yaw)*cos(pitch),
-        sin(pitch),
-        cos(yaw)*cos(pitch));
+    mat3 rotation = mat3(
+        cos(alpha)*cos(beta), cos(alpha)*sin(beta)*sin(gamma) - sin(alpha)*cos(gamma), cos(alpha)*sin(beta)*cos(gamma) + sin(alpha)*sin(gamma),
+        sin(alpha)*cos(beta), sin(alpha)*sin(beta)*sin(gamma) + cos(alpha)*cos(gamma), sin(alpha)*sin(beta)*cos(gamma) - cos(alpha)*sin(gamma),
+        -sin(beta), cos(beta)*sin(gamma), cos(beta)*cos(gamma));
 
+    vec3 ray = vec3(gl_FragCoord.x / iResolution.x - 0.5, -(gl_FragCoord.y / iResolution.y - 0.5) * (iResolution.x/iResolution.y), 1.0) * rotation;
 
     //color = vec4(ray, 1);
 
